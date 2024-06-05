@@ -1,78 +1,86 @@
 import numpy as np
 import matplotlib.pyplot as plt
-def _dft(x):
-    N = len(x)
-    X = np.zeros(N, dtype=complex)
-    for m in range(N):
-        for n in range(N):
-            X[m] += x[n] * np.exp(-2j * np.pi * m * n / N)
-    return X
 
-def _inverse_dft(X):
-    N = len(X)
-    x = np.zeros(N, dtype=complex)
-    for m in range(N):
-        for n in range(N):
-            x[m] += X[n] * np.exp(2j * np.pi * m * n / N)
-        x[n] /= N
-    return x
+def _DFT(x):
+    signal_len = len(x)
+    result = np.zeros(signal_len)
+    for i in range(signal_len):
+        for j in range(signal_len):
+            result[i] += x[j] * np.exp(-2j*np.pi*i*j/signal_len)
 
-# Define parameters
-fs = 8000  # Sampling frequency in Hz
-N = 8      # Number of points in DFT
-T = 1/fs   # Sampling period
-f1 = 1000  # Frequency of the first sine wave in Hz
-f2 = 2000  # Frequency of the second sine wave in Hz
-phase_shift = 3*np.pi/4  # Phase shift of the second sine wave in radians
+    return result
 
-# Time vector for N samples
-n = np.arange(N)
-print("n : " , n)
+def _IDFT(x):
+    signal_len = len(x)
+    result = np.zeros(signal_len)
+    for i in range(signal_len):
+        for j in range(signal_len):
+            x[i] += result[j] * np.exp(2j*np.pi*i*j/signal_len)
+            x[i]/=signal_len
 
-# Define the input signal x(nT)
-x_n = np.sin(2 * np.pi * f1 * n * T) + 0.5 * np.sin(2 * np.pi * f2 * n * T + phase_shift)
+    return result
+#define parameters
+f1 = 1000
+f2 = 2000
+fs = 8000
+T = 1/fs
+phase_shift = 3*np.pi/4
+number_of_samples = 8
 
-# Compute the 8-point DFT
-# X_k = np.fft.fft(x_n, N)
-X_k = _dft(x_n)
+#vector for N samples
+n = np.arange(number_of_samples)
 
-# Print the results
-print("Input samples x(n):")
-print(x_n)
-print("\n8-point DFT X(k):")
-print(X_k, len(X_k));
-phase = np.angle(X_k)
-print("phase: ", phase)
+#define the input signal x(nT)
+xn = np.sin(2*np.pi*f1*n*T) + 0.5 * np.sin(2*np.pi*f2*n*T + phase_shift)
 
-inv_x = _inverse_dft(X_k)
-print("inv:", inv_x)
+#compute the 8-point DFT
+# dft = np.fft.fft(xn)
+dft = _DFT(xn)
 
-# Plot the results
-plt.figure(figsize=(12, 6))
+#compute the magnitude spectrum
+magnitude_spectrum = np.abs(dft)
 
-plt.subplot(4, 1, 1)
-plt.plot(n, x_n)
-plt.title('Input Samples x(n)')
-plt.xlabel('Sample index n')
-plt.ylabel('Amplitude')
+#compute the phase
+phase = np.angle(dft)
 
-plt.subplot(4, 1, 2)
-k = np.arange(N)
-plt.stem(k, np.abs(X_k))
-plt.title('DFT Magnitude |X(k)|')
-plt.xlabel('Frequency bin k')
-plt.ylabel('Magnitude')
+#compute the power spectrum
+power_spectrum = np.abs(dft) ** 2
 
-plt.subplot(4, 1, 3)
+#compute the inverse DFT
+idft = _IDFT(xn)
+
+#plot the results
+plt.figure(figsize=(12, 10))
+
+plt.subplot(5, 1, 1)
+plt.plot(n, xn)
+plt.title("Signal Output")
+plt.xlabel("n")
+plt.ylabel("Amplitude")
+
+plt.subplot(5, 1, 2)
+k = np.arange(number_of_samples)
+plt.stem(k, magnitude_spectrum)
+plt.title("Magnitude Spectrum")
+plt.xlabel("Frequency (k)")
+plt.ylabel("Magnitude")
+
+plt.subplot(5, 1, 3)
 plt.stem(k, phase)
-plt.title('DFT phase')
+plt.title("Phase")
+plt.xlabel("Frequency (k)")
+plt.ylabel("Phase (radians)")
 
-plt.subplot(4, 1, 4)
-_in = np.arange(N)
-plt.plot(_in, inv_x)
-plt.title('Inverse DFT x(n)')
-# plt.xlabel('Frequency bin k')
-plt.ylabel('Amplitude')
+plt.subplot(5, 1, 4)
+plt.stem(k, power_spectrum)
+plt.title("Power Spectrum")
+plt.xlabel("Frequency (k)")
+plt.ylabel("Power")
 
-plt.tight_layout()
+plt.subplot(5, 1, 5)
+plt.plot(n, xn)
+plt.stem(n, idft.real)
+plt.title("Inverse DFT")
+plt.xlabel("n")
+plt.ylabel("Amplitude")
 plt.show()
